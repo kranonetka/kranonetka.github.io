@@ -179,9 +179,9 @@
 <span class="sd">        :return: Время (в секундах), прошедшее с момента одновременного начала отправки данных каждым потоком</span>
 <span class="sd">            до момента получения ответа каждым из потоков</span>
 
-<span class="sd">        Примечание: Каждый поток подготавливает и держит свои данные для отправки в памяти. При генерации больших объмов</span>
-<span class="sd">        будет много времени затрачнго на саму генерацию и много памяти будет отведено под хранение, пока остальные</span>
-<span class="sd">        потоки не сгенерируют свои данные</span>
+<span class="sd">        Примечание: Каждый поток подготавливает и держит свои данные для отправки в памяти. При генерации больших</span>
+<span class="sd">        объемов будет много времени затрачено на саму генерацию и много памяти будет отведено под хранение, пока</span>
+<span class="sd">        остальные потоки не подготовят свои данные</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
