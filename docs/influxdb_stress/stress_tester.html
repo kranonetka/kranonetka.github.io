@@ -1,0 +1,190 @@
+
+<!DOCTYPE html>
+
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Класс для тестирования производительности InfluxDB &#8212; документация InfluxDB Stress Tester 1.0</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="_static/translations.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="genindex.html" />
+    <link rel="search" title="Поиск" href="search.html" />
+    <link rel="next" title="Примеры реализации некоторых тестовых сценариев" href="scenarios.html" />
+    <link rel="prev" title="Документация InfluxDB Stress Tester" href="index.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Навигация</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Алфавитный указатель"
+             accesskey="I">указатель</a></li>
+        <li class="right" >
+          <a href="scenarios.html" title="Примеры реализации некоторых тестовых сценариев"
+             accesskey="N">вперёд</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Документация InfluxDB Stress Tester"
+             accesskey="P">назад</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">документация InfluxDB Stress Tester 1.0</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Класс для тестирования производительности InfluxDB</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="influxdb">
+<h1>Класс для тестирования производительности InfluxDB<a class="headerlink" href="#influxdb" title="Ссылка на этот заголовок">¶</a></h1>
+<dl class="py class">
+<dt id="stress_tester.stress_tester.StressTester">
+<em class="property">class </em><code class="sig-prename descclassname">stress_tester.stress_tester.</code><code class="sig-name descname">StressTester</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">host</span></em>, <em class="sig-param"><span class="n">port</span><span class="o">=</span><span class="default_value">8086</span></em>, <em class="sig-param"><span class="n">db</span><span class="o">=</span><span class="default_value">'stress'</span></em>, <em class="sig-param"><span class="n">precision</span><span class="o">=</span><span class="default_value">'ms'</span></em>, <em class="sig-param"><span class="n">headers</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester" title="Ссылка на это определение">¶</a></dt>
+<dd><dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.create_db">
+<code class="sig-name descname">create_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester.create_db"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester.create_db" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Создание БД</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.drop_db">
+<code class="sig-name descname">drop_db</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester.drop_db"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester.drop_db" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Удаление БД</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.ping">
+<code class="sig-name descname">ping</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester.ping"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester.ping" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Проверка доступности InfluxDB</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.read">
+<code class="sig-name descname">read</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes_count</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">aggregation</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'mean'</span></em>, <em class="sig-param"><span class="n">type</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'float'</span></em>, <em class="sig-param"><span class="n">start_date</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>datetime.datetime<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'now() - 5m'</span></em>, <em class="sig-param"><span class="n">end_date</span><span class="p">:</span> <span class="n">Union<span class="p">[</span>datetime.datetime<span class="p">, </span>str<span class="p">]</span></span> <span class="o">=</span> <span class="default_value">'now()'</span></em>, <em class="sig-param"><span class="n">time_interval</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'5s'</span></em><span class="sig-paren">)</span> &#x2192; Tuple<span class="p">[</span>float<span class="p">, </span>dict<span class="p">]</span><a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester.read"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester.read" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Одновременное чтение несколькими потоками</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_count</strong> – Количество одновременно читающих узлов (потоков)</p></li>
+<li><p><strong>aggregation</strong> – Функция агрегации, применяемая к группам. По умолчанию mean</p></li>
+<li><p><strong>type</strong> – Тип читаемых значений. По умолчанию float</p></li>
+<li><p><strong>start_date</strong> – Начало временного окна. Задаётся в виде datetime объекта,
+либо строкой по правилам синтаксиса InfluxDB
+(см. <a class="reference external" href="https://docs.influxdata.com/influxdb/v1.8/query_language/explore-data/#time-syntax">https://docs.influxdata.com/influxdb/v1.8/query_language/explore-data/#time-syntax</a>)</p></li>
+<li><p><strong>end_date</strong> – Конец временного окна. Задаётся в виде datetime объекта,
+либо строкой по правилам синтаксиса InfluxDB
+(см. <a class="reference external" href="https://docs.influxdata.com/influxdb/v1.8/query_language/explore-data/#time-syntax">https://docs.influxdata.com/influxdb/v1.8/query_language/explore-data/#time-syntax</a>)</p></li>
+<li><p><strong>time_interval</strong> – Временной интервал для группировки. Задаётся строкой по правилам синтаксиса Influxdb
+(см. <a class="reference external" href="https://docs.influxdata.com/influxdb/v1.8/query_language/spec/#durations">https://docs.influxdata.com/influxdb/v1.8/query_language/spec/#durations</a>)</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Время (в секундах), прошедшее с момента одновременного начала чтения данных каждым потоком
+до момента получения ответа каждым из потоков и результат выборки</p>
+</dd>
+</dl>
+<p>Примечание: выбираются записи с любыми тегами</p>
+</dd></dl>
+
+<dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.time_diff">
+<em class="property">property </em><code class="sig-name descname">time_diff</code><a class="headerlink" href="#stress_tester.stress_tester.StressTester.time_diff" title="Ссылка на это определение">¶</a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Результат</dt>
+<dd class="field-odd"><p>Разница (в секундах), затраченная на выполнение последней операции над InfluxDB</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt id="stress_tester.stress_tester.StressTester.write">
+<code class="sig-name descname">write</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">nodes_count</span><span class="p">:</span> <span class="n">int</span></em>, <em class="sig-param"><span class="n">float_sensors</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">int_sensors</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">str_sensors</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">bool_sensors</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">duration</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">1</span></em>, <em class="sig-param"><span class="n">start_date</span><span class="p">:</span> <span class="n">datetime.datetime</span> <span class="o">=</span> <span class="default_value">None</span></em><span class="sig-paren">)</span> &#x2192; float<a class="reference internal" href="_modules/stress_tester/stress_tester.html#StressTester.write"><span class="viewcode-link">[исходный код]</span></a><a class="headerlink" href="#stress_tester.stress_tester.StressTester.write" title="Ссылка на это определение">¶</a></dt>
+<dd><p>Одновременная запись несколькими потоками</p>
+<dl class="field-list simple">
+<dt class="field-odd">Параметры</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_count</strong> – Количество одновременно пишущих узлов (потоков)</p></li>
+<li><p><strong>float_sensors</strong> – Количество вещественных датчиков на узле</p></li>
+<li><p><strong>int_sensors</strong> – Количество целочисленных датчиков на узле</p></li>
+<li><p><strong>str_sensors</strong> – Количество строковых датчиков на узле</p></li>
+<li><p><strong>bool_sensors</strong> – Количество булевых датчиков на узле</p></li>
+<li><p><strong>duration</strong> – На протяжении скольки секунд копились данные для записи каждым узлом</p></li>
+<li><p><strong>start_date</strong> – Начиная с какой даты вести запись. По умолчанию - локальная дата запуска метода</p></li>
+</ul>
+</dd>
+<dt class="field-even">Результат</dt>
+<dd class="field-even"><p>Время (в секундах), прошедшее с момента одновременного начала отправки данных каждым потоком
+до момента получения ответа каждым из потоков</p>
+</dd>
+</dl>
+<p>Примечание: Каждый поток подготавливает и держит свои данные для отправик в памяти. При генерации больших объмов
+будет много времени затрачнго на саму генерацию и много памяти будет отведено под хранение, пока остальные
+потоки не сгенерируют свои данные</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Предыдущий раздел</h4>
+  <p class="topless"><a href="index.html"
+                        title="предыдущая глава">Документация InfluxDB Stress Tester</a></p>
+  <h4>Следующий раздел</h4>
+  <p class="topless"><a href="scenarios.html"
+                        title="следующая глава">Примеры реализации некоторых тестовых сценариев</a></p>
+  <div role="note" aria-label="source link">
+    <h3>Эта страница</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/stress_tester.rst.txt"
+            rel="nofollow">Исходный текст</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Быстрый поиск</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Искать" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Навигация</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Алфавитный указатель"
+             >указатель</a></li>
+        <li class="right" >
+          <a href="scenarios.html" title="Примеры реализации некоторых тестовых сценариев"
+             >вперёд</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Документация InfluxDB Stress Tester"
+             >назад</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">документация InfluxDB Stress Tester 1.0</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Класс для тестирования производительности InfluxDB</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Mikhail Murugov.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>

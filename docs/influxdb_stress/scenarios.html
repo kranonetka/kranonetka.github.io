@@ -1,0 +1,349 @@
+
+<!DOCTYPE html>
+
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Примеры реализации некоторых тестовых сценариев &#8212; документация InfluxDB Stress Tester 1.0</title>
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="_static/translations.js"></script>
+    <link rel="index" title="Алфавитный указатель" href="genindex.html" />
+    <link rel="search" title="Поиск" href="search.html" />
+    <link rel="prev" title="Класс для тестирования производительности InfluxDB" href="stress_tester.html" /> 
+  </head><body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Навигация</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Алфавитный указатель"
+             accesskey="I">указатель</a></li>
+        <li class="right" >
+          <a href="stress_tester.html" title="Класс для тестирования производительности InfluxDB"
+             accesskey="P">назад</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">документация InfluxDB Stress Tester 1.0</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Примеры реализации некоторых тестовых сценариев</a></li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="id1">
+<h1>Примеры реализации некоторых тестовых сценариев<a class="headerlink" href="#id1" title="Ссылка на этот заголовок">¶</a></h1>
+<div class="contents local topic" id="id2">
+<p class="topic-title">Содержание:</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#id3" id="id8">Реализация сценария пиковой нагрузки</a></p></li>
+<li><p><a class="reference internal" href="#id4" id="id9">Реализация сценария штатной нагрузки</a></p></li>
+<li><p><a class="reference internal" href="#id5" id="id10">Реализация сценария запоздавших данных</a></p></li>
+<li><p><a class="reference internal" href="#id6" id="id11">Реализация сценария получения исторических данных</a></p></li>
+<li><p><a class="reference internal" href="#id7" id="id12">Реализация сценария получения оперативных данных</a></p></li>
+</ul>
+</div>
+<div class="section" id="id3">
+<h2><a class="toc-backref" href="#id2">Реализация сценария пиковой нагрузки</a><a class="headerlink" href="#id3" title="Ссылка на этот заголовок">¶</a></h2>
+<p>В качестве пиковой нагрузки понимается ситуация, когда по какой-либо причине СУБД ВР
+не получала от OPC UA «регулярные» данные (например, из-за обрыва связи), а потом (после восстановления связи)
+происходит всплеск этих данных, и их необходимо быстро записать, чтобы продолжить работать в штатном режиме.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">stress_tester</span> <span class="kn">import</span> <span class="n">StressTester</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">StressTester</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="s1">&#39;8090&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">drop_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Удаление БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">create_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Создание БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">nodes_count</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">3</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Записываем смешанные данные, которые копились с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов в течение </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="n">nodes_count</span><span class="p">,</span>
+        <span class="n">float_sensors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">int_sensors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">bool_sensors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">str_sensors</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">duration</span><span class="o">=</span><span class="n">duration</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Запись накопившихся за </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> секунд смешанных данных с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняла </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id4">
+<h2><a class="toc-backref" href="#id2">Реализация сценария штатной нагрузки</a><a class="headerlink" href="#id4" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Под штатной нагрузкой понимается ситуация, когда работа идёт в штатном режиме. Есть множество технологических
+узлов, в каждом узле находится несколько датчиков. Например, ситуация, когда в узое 6 вещественных датчиков и
+3 булевых:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">stress_tester</span> <span class="kn">import</span> <span class="n">StressTester</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">StressTester</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="s1">&#39;8090&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">drop_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Удаление БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">create_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Создание БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">nodes_count</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mi">1</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Записываем смешанные данные, которые копились с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов в течение </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="n">nodes_count</span><span class="p">,</span>
+        <span class="n">float_sensors</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+        <span class="n">int_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">bool_sensors</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">str_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">duration</span><span class="o">=</span><span class="n">duration</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Запись накопившихся за </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> секунд смешанных данных с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняла </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h2><a class="toc-backref" href="#id2">Реализация сценария запоздавших данных</a><a class="headerlink" href="#id5" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Под завоздавшими данными понимается ситуация, когда по какой-либо причине данные от производства не дошли до
+СУБД за ожидаемое время.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">stress_tester</span> <span class="kn">import</span> <span class="n">StressTester</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">StressTester</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="s1">&#39;8090&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">drop_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Удаление БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">create_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Создание БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">nodes_count</span> <span class="o">=</span> <span class="mi">1000</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">60</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Записываем смешанные данные, которые копились с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов в течение </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="n">nodes_count</span><span class="p">,</span>
+        <span class="n">float_sensors</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+        <span class="n">int_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">bool_sensors</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">str_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="mi">2020</span><span class="p">,</span>
+            <span class="n">month</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+            <span class="n">day</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span>
+            <span class="n">hour</span><span class="o">=</span><span class="mi">19</span><span class="p">,</span>
+            <span class="n">minute</span><span class="o">=</span><span class="mi">26</span><span class="p">,</span>
+            <span class="n">second</span><span class="o">=</span><span class="mi">25</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Запись накопившихся за </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> секунд смешанных данных с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняла </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h2><a class="toc-backref" href="#id2">Реализация сценария получения исторических данных</a><a class="headerlink" href="#id6" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Под получением исторических данных подразумевается получение данных за какой-то прошедший период. Но для того,
+чтобы эти данные получить, надо, чтобы они сначала там оказались. Данная реализация сценария записывает данные
+во временное окно в 5 минут, а затем получает их.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">stress_tester</span> <span class="kn">import</span> <span class="n">StressTester</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">StressTester</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="s1">&#39;8090&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">drop_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Удаление БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">create_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Создание БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">nodes_count</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">5</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Записываем смешанные данные, которые копились с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов в течение </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="n">nodes_count</span><span class="p">,</span>
+        <span class="n">float_sensors</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+        <span class="n">int_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">bool_sensors</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">str_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span>
+            <span class="n">year</span><span class="o">=</span><span class="mi">2020</span><span class="p">,</span>
+            <span class="n">month</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="n">day</span><span class="o">=</span><span class="mi">1</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Запись накопившихся за </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> секунд смешанных данных с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняла </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">aggregation</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+        <span class="n">end_date</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
+        <span class="n">time_interval</span><span class="o">=</span><span class="s1">&#39;5s&#39;</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Чтение исторических данных с временным окном в 5 минут одним узлом &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняло </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id7">
+<h2><a class="toc-backref" href="#id2">Реализация сценария получения оперативных данных</a><a class="headerlink" href="#id7" title="Ссылка на этот заголовок">¶</a></h2>
+<p>Под оперативным данными понимаются данные, необходимые для обработки в реальном времени (например, для
+визуализации). Чтобы получить оперативные данные, надо, чтобы они в базе были. Данный сценарий симулирует
+запись данных в течение 15-ти минут со смещением по времени на 5 минут от текущего, затем получает данные
+за последние 5 минут.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">stress_tester</span> <span class="kn">import</span> <span class="n">StressTester</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">tester</span> <span class="o">=</span> <span class="n">StressTester</span><span class="p">(</span>
+        <span class="n">host</span><span class="o">=</span><span class="s1">&#39;localhost&#39;</span><span class="p">,</span>
+        <span class="n">port</span><span class="o">=</span><span class="s1">&#39;8090&#39;</span>
+    <span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">drop_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Удаление БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">tester</span><span class="o">.</span><span class="n">create_db</span><span class="p">()</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Создание БД заняло </span><span class="si">{</span><span class="n">tester</span><span class="o">.</span><span class="n">time_diff</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">nodes_count</span> <span class="o">=</span> <span class="mi">100</span>
+    <span class="n">duration</span> <span class="o">=</span> <span class="mi">60</span> <span class="o">*</span> <span class="mi">15</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Записываем смешанные данные, которые копились с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов в течение </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">write</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="n">nodes_count</span><span class="p">,</span>
+        <span class="n">float_sensors</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+        <span class="n">int_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">bool_sensors</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+        <span class="n">str_sensors</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+        <span class="n">duration</span><span class="o">=</span><span class="n">duration</span><span class="p">,</span>
+        <span class="n">start_date</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span> <span class="o">-</span> <span class="n">timedelta</span><span class="p">(</span><span class="n">minutes</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Запись накопившихся за </span><span class="si">{</span><span class="n">duration</span><span class="si">}</span><span class="s1"> секунд смешанных данных с </span><span class="si">{</span><span class="n">nodes_count</span><span class="si">}</span><span class="s1"> узлов &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняла </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+
+    <span class="n">delay</span><span class="p">,</span> <span class="n">response</span> <span class="o">=</span> <span class="n">tester</span><span class="o">.</span><span class="n">read</span><span class="p">(</span>
+        <span class="n">nodes_count</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">aggregation</span><span class="o">=</span><span class="s1">&#39;sum&#39;</span><span class="p">,</span>
+        <span class="nb">type</span><span class="o">=</span><span class="s1">&#39;float&#39;</span><span class="p">,</span>
+        <span class="n">time_interval</span><span class="o">=</span><span class="s1">&#39;5s&#39;</span>
+    <span class="p">)</span>
+
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Чтение оперативных данных за последние 5 минут одним узлом &#39;</span>
+          <span class="sa">f</span><span class="s1">&#39;заняло </span><span class="si">{</span><span class="n">delay</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1"> сек.&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Оглавление</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Примеры реализации некоторых тестовых сценариев</a><ul>
+<li><a class="reference internal" href="#id3">Реализация сценария пиковой нагрузки</a></li>
+<li><a class="reference internal" href="#id4">Реализация сценария штатной нагрузки</a></li>
+<li><a class="reference internal" href="#id5">Реализация сценария запоздавших данных</a></li>
+<li><a class="reference internal" href="#id6">Реализация сценария получения исторических данных</a></li>
+<li><a class="reference internal" href="#id7">Реализация сценария получения оперативных данных</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Предыдущий раздел</h4>
+  <p class="topless"><a href="stress_tester.html"
+                        title="предыдущая глава">Класс для тестирования производительности InfluxDB</a></p>
+  <div role="note" aria-label="source link">
+    <h3>Эта страница</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/scenarios.rst.txt"
+            rel="nofollow">Исходный текст</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Быстрый поиск</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Искать" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Навигация</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="Алфавитный указатель"
+             >указатель</a></li>
+        <li class="right" >
+          <a href="stress_tester.html" title="Класс для тестирования производительности InfluxDB"
+             >назад</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">документация InfluxDB Stress Tester 1.0</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Примеры реализации некоторых тестовых сценариев</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2020, Mikhail Murugov.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 3.2.1.
+    </div>
+  </body>
+</html>
