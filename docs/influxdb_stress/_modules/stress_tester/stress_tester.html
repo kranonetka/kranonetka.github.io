@@ -35,59 +35,59 @@
           <div class="body" role="main">
             
   <h1>Исходный код stress_tester.stress_tester</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
+<span></span><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">string</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">mul</span>
+<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Barrier</span><span class="p">,</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">current_thread</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">requests</span>
-<span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">threading</span> <span class="kn">import</span> <span class="n">Barrier</span><span class="p">,</span> <span class="n">Thread</span><span class="p">,</span> <span class="n">current_thread</span>
-<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">import</span> <span class="nn">random</span>
-<span class="kn">import</span> <span class="nn">string</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
-<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">contextmanager</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">operator</span> <span class="kn">import</span> <span class="n">mul</span>
 
 
 <div class="viewcode-block" id="StressTester"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester">[документация]</a><span class="k">class</span> <span class="nc">StressTester</span><span class="p">:</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8086</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="s1">&#39;stress&#39;</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="s1">&#39;ms&#39;</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_influxdb_url</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;http://</span><span class="si">{</span><span class="n">host</span><span class="si">}</span><span class="s1">:</span><span class="si">{</span><span class="n">port</span><span class="si">}</span><span class="s1">&#39;</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_ping_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_influxdb_url</span> <span class="o">+</span> <span class="s1">&#39;/ping&#39;</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_write_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_influxdb_url</span> <span class="o">+</span> <span class="s1">&#39;/write&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_write_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_query_endpoint</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_influxdb_url</span> <span class="o">+</span> <span class="s1">&#39;/query&#39;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_create_db_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;CREATE DATABASE &quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_drop_db_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;DROP DATABASE &quot;</span><span class="si">{</span><span class="n">db</span><span class="si">}</span><span class="s1">&quot;&#39;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_default_read_params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="n">db</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">precision</span><span class="p">)</span>
-
+        
         <span class="k">if</span> <span class="n">precision</span> <span class="o">==</span> <span class="s1">&#39;ms&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">mul</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Не реализована точность, отличная от ms&#39;</span><span class="p">)</span>
-
+        
         <span class="k">if</span> <span class="n">headers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_headers</span> <span class="o">=</span> <span class="n">headers</span>
-
+        
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="kc">None</span>
-
+    
     <span class="k">def</span> <span class="nf">_set_start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Служебный метод для того, чтобы засечь время начала операции над InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
+    
     <span class="k">def</span> <span class="nf">_set_end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Служебный метод для того, чтобы засечь время конца операции над InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-
+    
     <span class="nd">@contextmanager</span>
     <span class="k">def</span> <span class="nf">_timeit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -99,63 +99,63 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">_set_end_time</span><span class="p">()</span>
         <span class="k">finally</span><span class="p">:</span>
             <span class="k">pass</span>
-
+    
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">time_diff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :return: Разница (в секундах), затраченная на выполнение последней операции над InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_end_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_start_time</span>
-
+    
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_random_float</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :return: Случайное вещественное число из диапазона [0;1000) для записи в InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;</span><span class="si">{:.5e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
-
+    
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_random_int</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :return: Случайное целое число из диапазона [0; 10000) для записи в InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="si">}</span><span class="s1">i&#39;</span>
-
+    
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_random_str</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :return: Случайная строка длина 60 для записи в InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="s1">&#39;&quot;</span><span class="si">{}</span><span class="s1">&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_letters</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">60</span><span class="p">)))</span>
-
+    
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">_random_bool</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        :return: Случайное булево значение для записи в InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="s1">&#39;tf&#39;</span><span class="p">)</span>
-
+    
 <div class="viewcode-block" id="StressTester.ping"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester.ping">[документация]</a>    <span class="k">def</span> <span class="nf">ping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Проверка доступности InfluxDB</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeit</span><span class="p">():</span>
             <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_ping_endpoint</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span><span class="o">.</span><span class="n">raise_for_status</span><span class="p">()</span></div>
-
+    
 <div class="viewcode-block" id="StressTester.create_db"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester.create_db">[документация]</a>    <span class="k">def</span> <span class="nf">create_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Создание БД</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeit</span><span class="p">():</span>
             <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_create_db_params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span></div>
-
+    
 <div class="viewcode-block" id="StressTester.drop_db"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester.drop_db">[документация]</a>    <span class="k">def</span> <span class="nf">drop_db</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Удаление БД</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">_timeit</span><span class="p">():</span>
             <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_drop_db_params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span></div>
-
+    
 <div class="viewcode-block" id="StressTester.write"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester.write">[документация]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
               <span class="n">nodes_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
               <span class="n">float_sensors</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
@@ -183,15 +183,15 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">start_date</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-
+        
         <span class="n">start_writing</span> <span class="o">=</span> <span class="n">Barrier</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_start_time</span><span class="p">)</span>
         <span class="n">end_writing</span> <span class="o">=</span> <span class="n">Barrier</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_end_time</span><span class="p">)</span>
-
+        
         <span class="n">start_timestamp_ms</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()))</span>
-
+        
         <span class="k">def</span> <span class="nf">_thread_func</span><span class="p">():</span>
             <span class="n">dot_template</span> <span class="o">=</span> <span class="s1">&#39;python_measurement,thread=</span><span class="si">{}</span><span class="s1"> {{{{}}}}={{{{}}}},q=0 {{}}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">current_thread</span><span class="p">()</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-
+            
             <span class="n">payload</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                 <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
                     <span class="n">chain</span><span class="p">(</span>
@@ -206,28 +206,28 @@
                     <span class="nb">map</span><span class="p">(</span>
                         <span class="n">start_timestamp_ms</span><span class="o">.</span><span class="fm">__add__</span><span class="p">,</span>
                         <span class="nb">map</span><span class="p">(</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span><span class="p">,</span>
-                                <span class="nb">range</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
-                            <span class="p">)</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span><span class="p">,</span>
+                            <span class="nb">range</span><span class="p">(</span><span class="n">duration</span><span class="p">)</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
-                <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
-
+                <span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+            
             <span class="n">start_writing</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
             <span class="n">requests</span><span class="o">.</span><span class="n">post</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_write_params</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">payload</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span>
             <span class="n">end_writing</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-
+        
         <span class="n">nodes_count_digits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">))</span>
         <span class="n">name_string</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="se">{{</span><span class="s1">:0&gt;</span><span class="si">{</span><span class="n">nodes_count_digits</span><span class="si">}</span><span class="se">}}</span><span class="s1">&#39;</span>
-        <span class="n">threads</span> <span class="o">=</span> <span class="p">[</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_thread_func</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">)]</span>
-
+        <span class="n">threads</span> <span class="o">=</span> <span class="p">[</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_thread_func</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name_string</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">)]</span>
+        
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
+        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_diff</span></div>
-
+    
 <div class="viewcode-block" id="StressTester.read"><a class="viewcode-back" href="../../stress_tester.html#stress_tester.stress_tester.StressTester.read">[документация]</a>    <span class="k">def</span> <span class="nf">read</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
              <span class="n">nodes_count</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
              <span class="n">aggregation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;mean&#39;</span><span class="p">,</span>
@@ -254,38 +254,38 @@
 
 <span class="sd">        Примечание: выбираются записи с любыми тегами</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
+        
         <span class="n">ready_to_read</span> <span class="o">=</span> <span class="n">Barrier</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_start_time</span><span class="p">)</span>
         <span class="n">finished_reading</span> <span class="o">=</span> <span class="n">Barrier</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_set_end_time</span><span class="p">)</span>
-
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">start_date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span><span class="p">(</span><span class="n">start_date</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()))</span>
             <span class="n">start_date</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">start_date</span><span class="si">}</span><span class="s1">ms&#39;</span>
-
+        
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">end_date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">):</span>
             <span class="n">end_date</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_second_multiplier</span><span class="p">(</span><span class="n">end_date</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()))</span>
             <span class="n">end_date</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">end_date</span><span class="si">}</span><span class="s1">ms&#39;</span>
-
+        
         <span class="n">query</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;SELECT </span><span class="si">{</span><span class="n">aggregation</span><span class="si">}</span><span class="s1">(&quot;</span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s1">&quot;) FROM &quot;autogen&quot;.&quot;python_measurement&quot; &#39;</span> \
                 <span class="sa">f</span><span class="s1">&#39;WHERE </span><span class="si">{</span><span class="n">start_date</span><span class="si">}</span><span class="s1"> &lt;= time AND time &lt;= </span><span class="si">{</span><span class="n">end_date</span><span class="si">}</span><span class="s1"> &#39;</span> \
                 <span class="sa">f</span><span class="s1">&#39;GROUP BY time(</span><span class="si">{</span><span class="n">time_interval</span><span class="si">}</span><span class="s1">)&#39;</span>
-
+        
         <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_default_read_params</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
-
+        
         <span class="k">def</span> <span class="nf">_thread_func</span><span class="p">():</span>
             <span class="n">ready_to_read</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
             <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span>
             <span class="n">finished_reading</span><span class="o">.</span><span class="n">wait</span><span class="p">()</span>
-
+        
         <span class="n">threads</span> <span class="o">=</span> <span class="p">[</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_thread_func</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nodes_count</span><span class="p">)]</span>
-
+        
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">thread</span> <span class="ow">in</span> <span class="n">threads</span><span class="p">:</span>
             <span class="n">thread</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
-
+        
         <span class="n">result</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_query_endpoint</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_headers</span><span class="p">)</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-
+        
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_diff</span><span class="p">,</span> <span class="n">result</span></div></div>
 </pre></div>
 
